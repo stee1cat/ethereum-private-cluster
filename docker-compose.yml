@@ -1,0 +1,34 @@
+version: '2'
+services:
+  bootnode:
+    build: ./geth
+    restart: on-failure
+    container_name: bootnode
+    hostname: bootnode
+    command: --nodekeyhex '091bd6067cb4612df85d9c1ff85cc47f259ced4d4cd99816b14f35650f59c322' --datadir '/root/.ethereum' --rpcapi 'db,personal,eth,net,web3,miner' --unlock '0x8ae99ccc0bd7cf7dffe1f41c62e063a9adae5357' --password '/root/password.txt' --rpccorsdomain '*' --networkid 42 --rpc --mine
+    links:
+      - netstats
+    entrypoint: /root/start.sh
+    ports:
+      - 30303:30303
+      - 30303:30303/udp
+      - 8545:8545
+
+  node:
+    build: ./geth
+    restart: on-failure
+    container_name: node
+    links:
+      - bootnode
+      - netstats
+    entrypoint: /root/start.sh
+    command: --datadir '/root/.ethereum' --rpccorsdomain '*' --networkid 42 --rpc --bootnodes 'enode://288b97262895b1c7ec61cf314c2e2004407d0a5dc77566877aad1f2a36659c8b698f4b56fd06c4a0c0bf007b4cfb3e7122d907da3b005fa90e724441902eb19e@XXX:30303'
+
+  netstats:
+    build: eth-netstats
+    restart: on-failure
+    container_name: netstats
+    environment:
+      - WS_SECRET=eth-net-stats-secret
+    ports:
+      - 3000:3000
